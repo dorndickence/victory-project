@@ -1,28 +1,46 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { studentFeesData, feeData } from '../constants/data';
-import { Search, Filter, Banknote, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import type { StudentFee, FeeRecord } from '../types';
+import { Search, Filter, Banknote, CheckCircle, AlertCircle, XCircle, Loader2 } from 'lucide-react';
 
 const FeesPage: React.FC = () => {
+  const [studentFees, setStudentFees] = useState<StudentFee[]>([]);
+  const [feeRecords, setFeeRecords] = useState<FeeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const totalCollected = feeData.reduce((s, r) => s + r.collected, 0);
-  const totalPending = feeData.reduce((s, r) => s + r.pending, 0);
-  const paidCount = studentFeesData.filter(f => f.status === 'Paid').length;
-  const unpaidCount = studentFeesData.filter(f => f.status === 'Unpaid').length;
-  const partialCount = studentFeesData.filter(f => f.status === 'Partial').length;
+  useEffect(() => {
+    Promise.all([
+      apiFetch<{ data: { studentFees: StudentFee[] } }>('/fees'),
+      apiFetch<{ data: { feeRecords: FeeRecord[] } }>('/fees/monthly'),
+    ])
+      .then(([feesRes, monthlyRes]) => {
+        setStudentFees(feesRes.data.studentFees);
+        setFeeRecords(monthlyRes.data.feeRecords);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totalCollected = feeRecords.reduce((s, r) => s + r.collected, 0);
+  const totalPending = feeRecords.reduce((s, r) => s + r.pending, 0);
+  const paidCount = studentFees.filter(f => f.status === 'Paid').length;
+  const unpaidCount = studentFees.filter(f => f.status === 'Unpaid').length;
+  const partialCount = studentFees.filter(f => f.status === 'Partial').length;
 
   const filtered = useMemo(() =>
-    studentFeesData
+    studentFees
       .filter(f =>
         f.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         f.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         f.class.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .filter(f => statusFilter === 'All' || f.status === statusFilter),
-    [searchTerm, statusFilter]
+    [studentFees, searchTerm, statusFilter]
   );
 
   const StatusBadge: React.FC<{ status: 'Paid' | 'Partial' | 'Unpaid' }> = ({ status }) => {

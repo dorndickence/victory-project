@@ -1,26 +1,39 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { teachersData } from '../constants/data';
-import { Search, Filter, Plus, Mail, Clock } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import type { Teacher } from '../types';
+import { Search, Filter, Plus, Mail, Clock, Loader2 } from 'lucide-react';
 
 const TeachersPage: React.FC = () => {
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  useEffect(() => {
+    apiFetch<{ data: { teachers: Teacher[] } }>('/teachers')
+      .then(res => setTeachers(res.data.teachers))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filteredTeachers = useMemo(() => {
-    return teachersData
+    return teachers
       .filter(t =>
         t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .filter(t => statusFilter === 'All' || t.status === statusFilter);
-  }, [searchTerm, statusFilter]);
+  }, [teachers, searchTerm, statusFilter]);
 
-  const activeCount = teachersData.filter(t => t.status === 'Active').length;
-  const onLeaveCount = teachersData.filter(t => t.status === 'On Leave').length;
-  const avgExperience = Math.round(teachersData.reduce((sum, t) => sum + t.experience, 0) / teachersData.length);
+  const activeCount = teachers.filter(t => t.status === 'Active').length;
+  const onLeaveCount = teachers.filter(t => t.status === 'On Leave').length;
+  const avgExperience = teachers.length > 0
+    ? Math.round(teachers.reduce((sum, t) => sum + t.experience, 0) / teachers.length)
+    : 0;
 
   const StatusBadge: React.FC<{ status: 'Active' | 'On Leave' }> = ({ status }) => (
     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -102,43 +115,62 @@ const TeachersPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
-              <tr>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Teacher</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden md:table-cell">Subject</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden lg:table-cell">Experience</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Status</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTeachers.map(teacher => (
-                <tr key={teacher.id} className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="p-4">
-                    <div className="flex items-center">
-                      <img src={teacher.avatar} alt={teacher.name} className="h-10 w-10 rounded-full" />
-                      <div className="ml-3">
-                        <p className="font-semibold text-gray-800 dark:text-white">{teacher.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">{teacher.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 hidden md:table-cell text-gray-700 dark:text-dark-text">{teacher.subject}</td>
-                  <td className="p-4 hidden lg:table-cell text-gray-700 dark:text-dark-text">{teacher.experience} years</td>
-                  <td className="p-4"><StatusBadge status={teacher.status} /></td>
-                  <td className="p-4 text-right">
-                    <Button variant="secondary" className="text-xs">Profile</Button>
-                  </td>
+        {loading && (
+          <div className="flex items-center justify-center py-12 text-gray-500 dark:text-dark-text-secondary">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Loading teachers…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            Failed to load teachers: {error}
+          </div>
+        )}
+        {!loading && !error && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
+                <tr>
+                  <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Teacher</th>
+                  <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden md:table-cell">Subject</th>
+                  <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden lg:table-cell">Experience</th>
+                  <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Status</th>
+                  <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredTeachers.length === 0 && (
-          <div className="text-center py-8 text-gray-500 dark:text-dark-text-secondary">
-            No teachers found.
+              </thead>
+              <tbody>
+                {filteredTeachers.map(teacher => (
+                  <tr key={teacher.id} className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="p-4">
+                      <div className="flex items-center">
+                        {teacher.avatar ? (
+                          <img src={teacher.avatar} alt={teacher.name} className="h-10 w-10 rounded-full" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-700 dark:text-green-300 font-bold text-sm">
+                            {teacher.name.charAt(0)}
+                          </div>
+                        )}
+                        <div className="ml-3">
+                          <p className="font-semibold text-gray-800 dark:text-white">{teacher.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-dark-text-secondary">{teacher.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 hidden md:table-cell text-gray-700 dark:text-dark-text">{teacher.subject}</td>
+                    <td className="p-4 hidden lg:table-cell text-gray-700 dark:text-dark-text">{teacher.experience} years</td>
+                    <td className="p-4"><StatusBadge status={teacher.status} /></td>
+                    <td className="p-4 text-right">
+                      <Button variant="secondary" className="text-xs">Profile</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredTeachers.length === 0 && (
+              <div className="text-center py-8 text-gray-500 dark:text-dark-text-secondary">
+                No teachers found.
+              </div>
+            )}
           </div>
         )}
       </Card>
