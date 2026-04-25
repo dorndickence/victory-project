@@ -1,0 +1,59 @@
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
+
+import router from './routes';
+import { MONGO_URI, PORT } from './config/config';
+import globalErrorHandler from './controllers/errorController';
+
+const app = express();
+
+// 1) Global Middlewares
+app.use(cors());
+app.use(helmet());
+app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
+app.use(mongoSanitize());
+app.use(xss());
+app.use(hpp());
+
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Rate limiting
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many requests from this IP, please try again in an hour!'
+});
+app.use('/api', limiter);
+
+// 2) Routes
+app.use('/api/v1', router);
+
+// 3) Error handling
+app.use(globalErrorHandler);
+
+// 4) Database connection
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('DB connection successful!'))
+  .catch(err => console.error('DB connection error:', err));
+
+// 5) Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+process.on('unhandledRejection', (err: Error) => {
+  console.error('UNHANDLED REJECTION! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
