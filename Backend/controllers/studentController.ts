@@ -44,7 +44,18 @@ export const createStudent = async (req: Request, res: Response, next: NextFunct
 
 export const updateStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const student = await Student.findByIdAndUpdate(req.params.id, req.body, {
+    // Only allow specific fields to be updated to prevent mass-assignment
+    const { name, class: studentClass, rollNo, feesDue, attendance, avatar, status } = req.body;
+    const allowedUpdates: Record<string, unknown> = {};
+    if (name !== undefined) allowedUpdates.name = name;
+    if (studentClass !== undefined) allowedUpdates.class = studentClass;
+    if (rollNo !== undefined) allowedUpdates.rollNo = rollNo;
+    if (feesDue !== undefined) allowedUpdates.feesDue = feesDue;
+    if (attendance !== undefined) allowedUpdates.attendance = attendance;
+    if (avatar !== undefined) allowedUpdates.avatar = avatar;
+    if (status !== undefined) allowedUpdates.status = status;
+
+    const student = await Student.findByIdAndUpdate(req.params.id, allowedUpdates, {
       new: true,
       runValidators: true
     });

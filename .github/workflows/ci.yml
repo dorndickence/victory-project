@@ -10,6 +10,8 @@ jobs:
   backend:
     name: Backend – install / lint / test / build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: Backend
@@ -39,6 +41,8 @@ jobs:
   frontend:
     name: Frontend – install / type-check / build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
