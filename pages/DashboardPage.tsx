@@ -3,7 +3,6 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { Users, UserCog, Wallet, IndianRupee } from 'lucide-react';
 import Card from '../components/ui/Card';
 import { feeData, attendanceData, totalStudents, totalTeachers, totalParents, totalRevenue } from '../constants/data';
-import type { FeeRecord, AttendanceRecord } from '../types';
 
 const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string; color: string }> = ({ icon, title, value, color }) => (
   <Card className="flex items-center">
@@ -19,11 +18,7 @@ const StatCard: React.FC<{ icon: React.ReactNode; title: string; value: string; 
 
 const DashboardPage: React.FC = () => {
     const lightModeColors = { primary: '#3b82f6', secondary: '#ef4444' };
-    const darkModeColors = { primary: '#2563eb', secondary: '#f87171' };
-
-    // This is a placeholder as we don't have access to the real theme state here without complex context.
-    // In a real app, this would come from a theme context. For now, we will assume light mode for chart colors.
-    const colors = lightModeColors; 
+    const colors = lightModeColors;
 
 
   return (

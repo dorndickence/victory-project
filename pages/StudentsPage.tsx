@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { studentsData } from '../constants/data';
-import type { Student } from '../types';
 import { Search, Filter, Plus } from 'lucide-react';
 
 const StudentsPage: React.FC = () => {

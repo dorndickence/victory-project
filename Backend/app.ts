@@ -10,13 +10,13 @@ import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
 
 import router from './routes';
-import { MONGO_URI, PORT } from './config/config';
-import globalErrorHandler from './controllers/errorController';
+import { MONGO_URI, PORT, CORS_ORIGIN } from './config/config';
+import { globalErrorHandler } from './controllers/errorController';
 
 const app = express();
 
 // 1) Global Middlewares
-app.use(cors());
+app.use(cors({ origin: CORS_ORIGIN, credentials: true }));
 app.use(helmet());
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
@@ -36,18 +36,23 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// 2) Routes
+// 2) Health check
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// 3) Routes
 app.use('/api/v1', router);
 
-// 3) Error handling
+// 4) Error handling
 app.use(globalErrorHandler);
 
-// 4) Database connection
+// 5) Database connection
 mongoose.connect(MONGO_URI)
   .then(() => console.log('DB connection successful!'))
   .catch(err => console.error('DB connection error:', err));
 
-// 5) Start server
+// 6) Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCog, BookOpen, Banknote, Library, Megaphone, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Users, UserCog, BookOpen, Banknote, Library, Megaphone } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;

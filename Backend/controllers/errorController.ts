@@ -58,7 +58,7 @@ const sendErrorProd = (err: AppError, res: Response) => {
   }
 };
 
-export const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+export const globalErrorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
