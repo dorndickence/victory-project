@@ -2,6 +2,8 @@
 
 A full-stack school management web application built with **React + TypeScript** (frontend) and **Node.js / Express + MongoDB** (backend).
 
+All data displayed in the UI is served from the real backend API — there is no hardcoded demo data in production screens.
+
 ---
 
 ## Table of Contents
@@ -9,6 +11,7 @@ A full-stack school management web application built with **React + TypeScript**
 - [Tech Stack](#tech-stack)
 - [Running Locally](#running-locally)
 - [Environment Variables](#environment-variables)
+- [API Endpoints](#api-endpoints)
 - [Running Tests](#running-tests)
 - [Building for Production](#building-for-production)
 - [Deployment](#deployment)
@@ -78,6 +81,8 @@ npm run dev        # ts-node-dev → http://localhost:5000
 SEED_ADMIN_PASSWORD=ChooseAStrongPassword npm run seed
 ```
 
+This seeds students, teachers, monthly fee records, attendance records, per-student fees, subjects, exams, books, borrow records, announcements, and an admin user.
+
 ---
 
 ## Environment Variables
@@ -102,6 +107,36 @@ SEED_ADMIN_PASSWORD=ChooseAStrongPassword npm run seed
 | `SEED_ADMIN_PASSWORD` | Seed only | Admin password created by seed script |
 
 > **Note**: `JWT_SECRET` is **required** in production. The server will exit immediately on startup if it is not set.
+
+---
+
+## API Endpoints
+
+All endpoints are prefixed with `/api/v1`.
+
+| Resource | Method | Path | Auth required |
+|----------|--------|------|---------------|
+| Health | GET | `/healthz` | No |
+| Auth | POST | `/auth/login` | No |
+| Dashboard | GET | `/dashboard/stats` | No |
+| Students | GET / POST | `/students` | GET: protected |
+| Students | GET / PATCH / DELETE | `/students/:id` | Protected |
+| Teachers | GET | `/teachers` | No |
+| Teachers | POST | `/teachers` | Admin |
+| Teachers | PATCH / DELETE | `/teachers/:id` | Admin |
+| Fees (monthly) | GET | `/fees/monthly` | No |
+| Fees (per-student) | GET / POST | `/fees` | POST: Admin |
+| Fees (per-student) | PATCH / DELETE | `/fees/:id` | Admin |
+| Academics | GET / POST | `/academics/subjects` | POST: Admin/Teacher |
+| Academics | PATCH / DELETE | `/academics/subjects/:id` | Admin/Teacher |
+| Academics | GET / POST | `/academics/exams` | POST: Admin/Teacher |
+| Academics | PATCH / DELETE | `/academics/exams/:id` | Admin/Teacher |
+| Library | GET / POST | `/library/books` | POST: Admin |
+| Library | PATCH / DELETE | `/library/books/:id` | Admin |
+| Library | GET / POST | `/library/borrows` | POST: Admin |
+| Library | PATCH / DELETE | `/library/borrows/:id` | Admin |
+| Communication | GET / POST | `/communication` | POST: Admin/Teacher |
+| Communication | PATCH / DELETE | `/communication/:id` | Admin/Teacher |
 
 ---
 
@@ -180,9 +215,10 @@ The backend exposes `GET /healthz` → `{ "status": "ok" }` for uptime monitors 
 victory-project/
 ├── .env.example          # Frontend env template
 ├── .github/workflows/    # GitHub Actions CI
-├── components/           # Shared React components
-├── constants/data.ts     # Demo data (used in dev frontend)
-├── pages/                # React page components
+├── components/           # Shared React components (including AI assistant)
+├── constants/data.ts     # Intentionally empty – data comes from the backend API
+├── lib/api.ts            # Frontend API client helper (uses VITE_API_URL)
+├── pages/                # React page components (all wired to real API)
 ├── types.ts              # Shared TypeScript types
 ├── vite.config.ts        # Vite configuration
 ├── App.tsx               # Root React component
@@ -190,10 +226,14 @@ victory-project/
     ├── .env.example      # Backend env template
     ├── app.ts            # Express app entry point
     ├── config/           # Runtime configuration & validation
-    ├── controllers/      # Route handlers & error controller
+    ├── controllers/      # Route handlers (student, teacher, fee, academics,
+    │                     #   library, communication, dashboard, error)
     ├── middleware/        # Auth (JWT protect / restrictTo)
-    ├── models/           # Mongoose schemas
-    ├── routes/           # Express routers
-    ├── tests/            # Unit tests
-    └── utils/seed.ts     # Dev-only database seed script
+    ├── models/           # Mongoose schemas (Student, Teacher, FeeRecord,
+    │                     #   AttendanceRecord, StudentFee, Subject, Exam,
+    │                     #   Book, BorrowRecord, Announcement, User)
+    ├── routes/           # Express routers for all resources
+    ├── tests/            # Unit tests (errorController, teacherController)
+    └── utils/seed.ts     # Dev-only database seed script (all entities)
 ```
+

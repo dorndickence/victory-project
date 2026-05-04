@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import FeeRecord from '../models/FeeRecord';
 import StudentFee from '../models/StudentFee';
 import AppError from './errorController';
+import { validateObjectId } from '../utils/validateId';
 
 // Monthly fee summary records (for charts)
 export const getAllFeeRecords = async (_req: Request, res: Response, next: NextFunction) => {
@@ -33,6 +34,7 @@ export const getAllStudentFees = async (_req: Request, res: Response, next: Next
 
 export const getStudentFee = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const fee = await StudentFee.findById(req.params.id);
     if (!fee) {
       return next(new AppError('No fee record found with that ID', 404));
@@ -63,6 +65,7 @@ export const createStudentFee = async (req: Request, res: Response, next: NextFu
 
 export const updateStudentFee = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { studentId, studentName, class: studentClass, month, amount, paid, due, status, dueDate } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (studentId !== undefined) allowedUpdates.studentId = studentId;
@@ -93,6 +96,7 @@ export const updateStudentFee = async (req: Request, res: Response, next: NextFu
 
 export const deleteStudentFee = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const fee = await StudentFee.findByIdAndDelete(req.params.id);
     if (!fee) {
       return next(new AppError('No fee record found with that ID', 404));

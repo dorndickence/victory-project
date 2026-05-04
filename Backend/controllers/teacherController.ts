@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Teacher from '../models/Teacher';
 import AppError from './errorController';
+import { validateObjectId } from '../utils/validateId';
 
 export const getAllTeachers = async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -17,6 +18,7 @@ export const getAllTeachers = async (_req: Request, res: Response, next: NextFun
 
 export const getTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const teacher = await Teacher.findById(req.params.id);
     if (!teacher) {
       return next(new AppError('No teacher found with that ID', 404));
@@ -45,6 +47,7 @@ export const createTeacher = async (req: Request, res: Response, next: NextFunct
 
 export const updateTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { name, subject, experience, avatar, status } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (name !== undefined) allowedUpdates.name = name;
@@ -71,6 +74,7 @@ export const updateTeacher = async (req: Request, res: Response, next: NextFunct
 
 export const deleteTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const teacher = await Teacher.findByIdAndDelete(req.params.id);
     if (!teacher) {
       return next(new AppError('No teacher found with that ID', 404));

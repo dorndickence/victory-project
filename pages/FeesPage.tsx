@@ -136,47 +136,62 @@ const FeesPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
-              <tr>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Student</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden md:table-cell">Class</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden sm:table-cell">Month</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden lg:table-cell">Amount</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden lg:table-cell">Paid</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Due</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Status</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden md:table-cell">Due Date</th>
-                <th className="p-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(fee => (
-                <tr key={fee.id} className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="p-4">
-                    <p className="font-semibold text-gray-800 dark:text-white">{fee.studentName}</p>
-                    <p className="text-xs text-gray-500 dark:text-dark-text-secondary">{fee.studentId}</p>
-                  </td>
-                  <td className="p-4 hidden md:table-cell text-gray-700 dark:text-dark-text">{fee.class}</td>
-                  <td className="p-4 hidden sm:table-cell text-gray-700 dark:text-dark-text">{fee.month}</td>
-                  <td className="p-4 hidden lg:table-cell text-gray-700 dark:text-dark-text">₹{fee.amount.toLocaleString()}</td>
-                  <td className="p-4 hidden lg:table-cell text-green-600 dark:text-green-400 font-medium">₹{fee.paid.toLocaleString()}</td>
-                  <td className="p-4 text-red-600 dark:text-red-400 font-medium">₹{fee.due.toLocaleString()}</td>
-                  <td className="p-4"><StatusBadge status={fee.status} /></td>
-                  <td className="p-4 hidden md:table-cell text-gray-500 dark:text-dark-text-secondary text-sm">{fee.dueDate}</td>
-                  <td className="p-4 text-right">
-                    <Button variant="secondary" className="text-xs">Details</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-8 text-gray-500 dark:text-dark-text-secondary">
-            No fee records found.
+        {loading && (
+          <div className="flex items-center justify-center py-12 text-gray-500 dark:text-dark-text-secondary">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Loading fee records…
           </div>
+        )}
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            Failed to load fee records: {error}
+          </div>
+        )}
+        {!loading && !error && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
+                  <tr>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Student</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden md:table-cell">Class</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden sm:table-cell">Month</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden lg:table-cell">Amount</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden lg:table-cell">Paid</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Due</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary">Status</th>
+                    <th className="p-4 text-sm font-semibold text-gray-600 dark:text-dark-text-secondary hidden md:table-cell">Due Date</th>
+                    <th className="p-4"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(fee => (
+                    <tr key={fee.id} className="border-b border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="p-4">
+                        <p className="font-semibold text-gray-800 dark:text-white">{fee.studentName}</p>
+                        <p className="text-xs text-gray-500 dark:text-dark-text-secondary">{fee.studentId}</p>
+                      </td>
+                      <td className="p-4 hidden md:table-cell text-gray-700 dark:text-dark-text">{fee.class}</td>
+                      <td className="p-4 hidden sm:table-cell text-gray-700 dark:text-dark-text">{fee.month}</td>
+                      <td className="p-4 hidden lg:table-cell text-gray-700 dark:text-dark-text">₹{fee.amount.toLocaleString()}</td>
+                      <td className="p-4 hidden lg:table-cell text-green-600 dark:text-green-400 font-medium">₹{fee.paid.toLocaleString()}</td>
+                      <td className="p-4 text-red-600 dark:text-red-400 font-medium">₹{fee.due.toLocaleString()}</td>
+                      <td className="p-4"><StatusBadge status={fee.status} /></td>
+                      <td className="p-4 hidden md:table-cell text-gray-500 dark:text-dark-text-secondary text-sm">{fee.dueDate}</td>
+                      <td className="p-4 text-right">
+                        <Button variant="secondary" className="text-xs">Details</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-gray-500 dark:text-dark-text-secondary">
+                No fee records found.
+              </div>
+            )}
+          </>
         )}
       </Card>
     </div>

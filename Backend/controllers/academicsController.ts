@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Subject from '../models/Subject';
 import Exam from '../models/Exam';
 import AppError from './errorController';
+import { validateObjectId } from '../utils/validateId';
 
 // Subjects
 export const getAllSubjects = async (_req: Request, res: Response, next: NextFunction) => {
@@ -19,6 +20,7 @@ export const getAllSubjects = async (_req: Request, res: Response, next: NextFun
 
 export const getSubject = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const subject = await Subject.findById(req.params.id);
     if (!subject) {
       return next(new AppError('No subject found with that ID', 404));
@@ -47,6 +49,7 @@ export const createSubject = async (req: Request, res: Response, next: NextFunct
 
 export const updateSubject = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { name, class: subjectClass, teacherName, hoursPerWeek } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (name !== undefined) allowedUpdates.name = name;
@@ -72,6 +75,7 @@ export const updateSubject = async (req: Request, res: Response, next: NextFunct
 
 export const deleteSubject = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const subject = await Subject.findByIdAndDelete(req.params.id);
     if (!subject) {
       return next(new AppError('No subject found with that ID', 404));
@@ -101,6 +105,7 @@ export const getAllExams = async (_req: Request, res: Response, next: NextFuncti
 
 export const getExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const exam = await Exam.findById(req.params.id);
     if (!exam) {
       return next(new AppError('No exam found with that ID', 404));
@@ -129,6 +134,7 @@ export const createExam = async (req: Request, res: Response, next: NextFunction
 
 export const updateExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { subject, class: examClass, date, duration, maxMarks, status } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (subject !== undefined) allowedUpdates.subject = subject;
@@ -156,6 +162,7 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
 
 export const deleteExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const exam = await Exam.findByIdAndDelete(req.params.id);
     if (!exam) {
       return next(new AppError('No exam found with that ID', 404));

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Book from '../models/Book';
 import BorrowRecord from '../models/BorrowRecord';
 import AppError from './errorController';
+import { validateObjectId } from '../utils/validateId';
 
 // Books
 export const getAllBooks = async (_req: Request, res: Response, next: NextFunction) => {
@@ -19,6 +20,7 @@ export const getAllBooks = async (_req: Request, res: Response, next: NextFuncti
 
 export const getBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const book = await Book.findById(req.params.id);
     if (!book) {
       return next(new AppError('No book found with that ID', 404));
@@ -47,6 +49,7 @@ export const createBook = async (req: Request, res: Response, next: NextFunction
 
 export const updateBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { title, author, category, copies, available } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (title !== undefined) allowedUpdates.title = title;
@@ -73,6 +76,7 @@ export const updateBook = async (req: Request, res: Response, next: NextFunction
 
 export const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const book = await Book.findByIdAndDelete(req.params.id);
     if (!book) {
       return next(new AppError('No book found with that ID', 404));
@@ -102,6 +106,7 @@ export const getAllBorrowRecords = async (_req: Request, res: Response, next: Ne
 
 export const getBorrowRecord = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const record = await BorrowRecord.findById(req.params.id);
     if (!record) {
       return next(new AppError('No borrow record found with that ID', 404));
@@ -130,6 +135,7 @@ export const createBorrowRecord = async (req: Request, res: Response, next: Next
 
 export const updateBorrowRecord = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { bookTitle, studentName, issueDate, dueDate, returnDate, status } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (bookTitle !== undefined) allowedUpdates.bookTitle = bookTitle;
@@ -157,6 +163,7 @@ export const updateBorrowRecord = async (req: Request, res: Response, next: Next
 
 export const deleteBorrowRecord = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const record = await BorrowRecord.findByIdAndDelete(req.params.id);
     if (!record) {
       return next(new AppError('No borrow record found with that ID', 404));

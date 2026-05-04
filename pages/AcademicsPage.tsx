@@ -1,33 +1,51 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { subjectsData, examsData } from '../constants/data';
-import { Search, Plus, BookOpen, ClipboardList } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import type { Subject, Exam } from '../types';
+import { Search, Plus, BookOpen, ClipboardList, Loader2 } from 'lucide-react';
 
 type Tab = 'subjects' | 'exams';
 
 const AcademicsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('subjects');
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [examFilter, setExamFilter] = useState<'All' | 'Upcoming' | 'Completed'>('All');
 
+  useEffect(() => {
+    Promise.all([
+      apiFetch<{ data: { subjects: Subject[] } }>('/academics/subjects'),
+      apiFetch<{ data: { exams: Exam[] } }>('/academics/exams'),
+    ])
+      .then(([subjectsRes, examsRes]) => {
+        setSubjects(subjectsRes.data.subjects);
+        setExams(examsRes.data.exams);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filteredSubjects = useMemo(() =>
-    subjectsData.filter(s =>
+    subjects.filter(s =>
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.class.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.teacherName.toLowerCase().includes(searchTerm.toLowerCase())
-    ), [searchTerm]);
+    ), [subjects, searchTerm]);
 
   const filteredExams = useMemo(() =>
-    examsData
+    exams
       .filter(e => examFilter === 'All' || e.status === examFilter)
       .filter(e =>
         e.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.class.toLowerCase().includes(searchTerm.toLowerCase())
-      ), [searchTerm, examFilter]);
+      ), [exams, searchTerm, examFilter]);
 
-  const upcomingCount = examsData.filter(e => e.status === 'Upcoming').length;
-  const completedCount = examsData.filter(e => e.status === 'Completed').length;
+  const upcomingCount = exams.filter(e => e.status === 'Upcoming').length;
+  const completedCount = exams.filter(e => e.status === 'Completed').length;
 
   const ExamBadge: React.FC<{ status: 'Upcoming' | 'Completed' }> = ({ status }) => (
     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -57,7 +75,7 @@ const AcademicsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-sm text-gray-500 dark:text-dark-text-secondary">Total Subjects</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-white">{subjectsData.length}</p>
+            <p className="text-2xl font-bold text-gray-800 dark:text-white">{subjects.length}</p>
           </div>
         </Card>
         <Card className="flex items-center">
@@ -132,8 +150,20 @@ const AcademicsPage: React.FC = () => {
           )}
         </div>
 
+        {loading && (
+          <div className="flex items-center justify-center py-12 text-gray-500 dark:text-dark-text-secondary">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Loading academics data…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            Failed to load academics data: {error}
+          </div>
+        )}
+
         {/* Subjects table */}
-        {activeTab === 'subjects' && (
+        {!loading && !error && activeTab === 'subjects' && (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
@@ -166,7 +196,7 @@ const AcademicsPage: React.FC = () => {
         )}
 
         {/* Exams table */}
-        {activeTab === 'exams' && (
+        {!loading && !error && activeTab === 'exams' && (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
@@ -203,3 +233,4 @@ const AcademicsPage: React.FC = () => {
 };
 
 export default AcademicsPage;
+

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Announcement from '../models/Announcement';
 import AppError from './errorController';
+import { validateObjectId } from '../utils/validateId';
 
 export const getAllAnnouncements = async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -17,6 +18,7 @@ export const getAllAnnouncements = async (_req: Request, res: Response, next: Ne
 
 export const getAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const announcement = await Announcement.findById(req.params.id);
     if (!announcement) {
       return next(new AppError('No announcement found with that ID', 404));
@@ -45,6 +47,7 @@ export const createAnnouncement = async (req: Request, res: Response, next: Next
 
 export const updateAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const { title, message, audience, date, author } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (title !== undefined) allowedUpdates.title = title;
@@ -71,6 +74,7 @@ export const updateAnnouncement = async (req: Request, res: Response, next: Next
 
 export const deleteAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!validateObjectId(req.params.id, next)) return;
     const announcement = await Announcement.findByIdAndDelete(req.params.id);
     if (!announcement) {
       return next(new AppError('No announcement found with that ID', 404));
