@@ -6,9 +6,14 @@ import { Request, Response, NextFunction } from 'express';
 import AppError from '../controllers/errorController';
 
 // ── Mock the Teacher model ───────────────────────────────────────────────────
+// Use valid 24-hex-char MongoDB ObjectId strings so validateObjectId passes.
+const ID1 = '507f1f77bcf86cd799439011';
+const ID2 = '507f1f77bcf86cd799439012';
+const MISSING_ID = '507f1f77bcf86cd799439099';
+
 const mockTeachers = [
-  { _id: 'tid1', id: 'T01', name: 'Mr. Smith', subject: 'Mathematics', experience: 10, status: 'Active' },
-  { _id: 'tid2', id: 'T02', name: 'Ms. Jones', subject: 'Science', experience: 8, status: 'Active' },
+  { _id: ID1, id: 'T01', name: 'Mr. Smith', subject: 'Mathematics', experience: 10, status: 'Active' },
+  { _id: ID2, id: 'T02', name: 'Ms. Jones', subject: 'Science', experience: 8, status: 'Active' },
 ];
 
 jest.mock('../models/Teacher', () => ({
@@ -26,7 +31,7 @@ jest.mock('../models/Teacher', () => ({
       Promise.resolve(mockTeachers.find(t => t._id === id) ?? null)
     ),
     create: jest.fn().mockImplementation((data: object) =>
-      Promise.resolve({ _id: 'tid_new', ...data })
+      Promise.resolve({ _id: '507f1f77bcf86cd799439013', ...data })
     ),
   },
 }));
@@ -69,7 +74,7 @@ describe('getAllTeachers', () => {
 
 describe('getTeacher', () => {
   it('returns a teacher when found', async () => {
-    const req = { params: { id: 'tid1' } } as unknown as Request;
+    const req = { params: { id: ID1 } } as unknown as Request;
     const res = buildRes();
     await getTeacher(req, res, mockNext);
 
@@ -80,7 +85,7 @@ describe('getTeacher', () => {
   });
 
   it('calls next with 404 AppError when teacher is not found', async () => {
-    const req = { params: { id: 'nonexistent' } } as unknown as Request;
+    const req = { params: { id: MISSING_ID } } as unknown as Request;
     const res = buildRes();
     const next = jest.fn() as NextFunction;
     await getTeacher(req, res, next);
@@ -109,7 +114,7 @@ describe('createTeacher', () => {
 describe('updateTeacher', () => {
   it('updates allowed fields and returns the updated teacher', async () => {
     const req = {
-      params: { id: 'tid1' },
+      params: { id: ID1 },
       body: { subject: 'Advanced Mathematics' }
     } as unknown as Request;
     const res = buildRes();
@@ -123,7 +128,7 @@ describe('updateTeacher', () => {
 
   it('calls next with 404 when teacher not found', async () => {
     const req = {
-      params: { id: 'nonexistent' },
+      params: { id: MISSING_ID },
       body: { subject: 'Physics' }
     } as unknown as Request;
     const res = buildRes();
@@ -136,7 +141,7 @@ describe('updateTeacher', () => {
 
 describe('deleteTeacher', () => {
   it('deletes a teacher and returns 204', async () => {
-    const req = { params: { id: 'tid1' } } as unknown as Request;
+    const req = { params: { id: ID1 } } as unknown as Request;
     const res = buildRes();
     await deleteTeacher(req, res, mockNext);
 
@@ -144,7 +149,7 @@ describe('deleteTeacher', () => {
   });
 
   it('calls next with 404 when teacher not found', async () => {
-    const req = { params: { id: 'nonexistent' } } as unknown as Request;
+    const req = { params: { id: MISSING_ID } } as unknown as Request;
     const res = buildRes();
     const next = jest.fn() as NextFunction;
     await deleteTeacher(req, res, next);
