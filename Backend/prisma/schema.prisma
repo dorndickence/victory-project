@@ -1,0 +1,134 @@
+// Prisma schema for Victory School Management System
+// Database: PostgreSQL (Neon)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
+  role     String // admin, teacher, student, parent
+
+  @@map("users")
+}
+
+model Student {
+  id         String @id @default(uuid())
+  name       String
+  className  String @map("class")
+  rollNo     Int
+  feesDue    Float  @default(0)
+  attendance Float  @default(0)
+  avatar     String @default("")
+  status     String @default("Active") // Active, Inactive
+
+  @@map("students")
+}
+
+model Teacher {
+  id         String @id @default(uuid())
+  name       String
+  subject    String
+  experience Int    @default(0)
+  avatar     String @default("")
+  status     String @default("Active") // Active, On Leave
+
+  @@map("teachers")
+}
+
+model FeeRecord {
+  id        String @id @default(uuid())
+  month     String
+  collected Float  @default(0)
+  pending   Float  @default(0)
+
+  @@map("fee_records")
+}
+
+model AttendanceRecord {
+  id      String @id @default(uuid())
+  month   String
+  present Int    @default(0)
+  absent  Int    @default(0)
+
+  @@map("attendance_records")
+}
+
+model StudentFee {
+  id          String @id @default(uuid())
+  studentId   String
+  studentName String
+  className   String @map("class")
+  month       String
+  amount      Float
+  paid        Float
+  due         Float
+  status      String // Paid, Partial, Unpaid
+  dueDate     String
+
+  @@map("student_fees")
+}
+
+model Subject {
+  id           String @id @default(uuid())
+  name         String
+  className    String @map("class")
+  teacherName  String
+  hoursPerWeek Int
+
+  @@map("subjects")
+}
+
+model Exam {
+  id       String @id @default(uuid())
+  subject  String
+  className String @map("class")
+  date     String
+  duration String
+  maxMarks Int
+  status   String @default("Upcoming") // Upcoming, Completed
+
+  @@map("exams")
+}
+
+model Book {
+  id        String @id @default(uuid())
+  title     String
+  author    String
+  category  String
+  copies    Int
+  available Int
+
+  @@map("books")
+}
+
+model BorrowRecord {
+  id          String  @id @default(uuid())
+  bookTitle   String
+  studentName String
+  issueDate   String
+  dueDate     String
+  returnDate  String?
+  status      String  @default("Borrowed") // Borrowed, Returned, Overdue
+
+  @@map("borrow_records")
+}
+
+model Announcement {
+  id       String @id @default(uuid())
+  title    String
+  message  String
+  audience String @default("All") // All, Students, Teachers, Parents
+  date     String
+  author   String
+
+  @@map("announcements")
+}
