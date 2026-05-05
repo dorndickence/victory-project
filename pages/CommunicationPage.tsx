@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { announcementsData } from '../constants/data';
+import { apiFetch } from '../lib/api';
 import type { Announcement } from '../types';
-import { Megaphone, Send, Users, GraduationCap, BookOpen, UserCheck } from 'lucide-react';
+import { Megaphone, Send, Users, GraduationCap, BookOpen, UserCheck, Loader2 } from 'lucide-react';
 
 const AudienceBadge: React.FC<{ audience: Announcement['audience'] }> = ({ audience }) => {
   const styles: Record<Announcement['audience'], string> = {
@@ -20,29 +20,43 @@ const AudienceBadge: React.FC<{ audience: Announcement['audience'] }> = ({ audie
 };
 
 const CommunicationPage: React.FC = () => {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<'All' | Announcement['audience']>('All');
   const [showCompose, setShowCompose] = useState(false);
+  const [sending, setSending] = useState(false);
   const [form, setForm] = useState({ title: '', message: '', audience: 'All' as Announcement['audience'] });
-  const [localAnnouncements, setLocalAnnouncements] = useState<Announcement[]>(announcementsData);
+
+  useEffect(() => {
+    apiFetch<{ data: { announcements: Announcement[] } }>('/communication')
+      .then(res => setAnnouncements(res.data.announcements))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered = useMemo(() =>
-    localAnnouncements.filter(a => audienceFilter === 'All' || a.audience === audienceFilter),
-    [localAnnouncements, audienceFilter]
+    announcements.filter(a => audienceFilter === 'All' || a.audience === audienceFilter),
+    [announcements, audienceFilter]
   );
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!form.title.trim() || !form.message.trim()) return;
-    const newAnnouncement: Announcement = {
-      id: `A${Date.now()}`,
-      title: form.title,
-      message: form.message,
-      audience: form.audience,
-      date: new Date().toISOString().split('T')[0],
-      author: 'Admin',
-    };
-    setLocalAnnouncements(prev => [newAnnouncement, ...prev]);
-    setForm({ title: '', message: '', audience: 'All' });
-    setShowCompose(false);
+    setSending(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const res = await apiFetch<{ data: { announcement: Announcement } }>('/communication', {
+        method: 'POST',
+        body: JSON.stringify({ ...form, date: today, author: 'Admin' }),
+      });
+      setAnnouncements(prev => [res.data.announcement, ...prev]);
+      setForm({ title: '', message: '', audience: 'All' });
+      setShowCompose(false);
+    } catch (err: unknown) {
+      alert(`Failed to send: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -66,8 +80,8 @@ const CommunicationPage: React.FC = () => {
           };
           const colors = { All: 'bg-purple-500', Students: 'bg-blue-500', Teachers: 'bg-green-500', Parents: 'bg-yellow-500' };
           const count = audience === 'All'
-            ? localAnnouncements.length
-            : localAnnouncements.filter(a => a.audience === audience).length;
+            ? announcements.length
+            : announcements.filter(a => a.audience === audience).length;
           return (
             <Card key={audience} className="flex items-center">
               <div className={`p-3 rounded-full ${colors[audience]} mr-4`}>{icons[audience]}</div>
@@ -120,8 +134,8 @@ const CommunicationPage: React.FC = () => {
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setShowCompose(false)}>Cancel</Button>
-              <Button onClick={handleSend} disabled={!form.title.trim() || !form.message.trim()}>
-                <Send className="h-4 w-4 mr-2" />
+              <Button onClick={handleSend} disabled={!form.title.trim() || !form.message.trim() || sending}>
+                {sending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
                 Send
               </Button>
             </div>
@@ -150,30 +164,44 @@ const CommunicationPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filtered.length === 0 && (
-            <p className="text-center py-8 text-gray-500 dark:text-dark-text-secondary">No announcements found.</p>
-          )}
-          {filtered.map(announcement => (
-            <div
-              key={announcement.id}
-              className="p-4 rounded-lg border border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                <h3 className="font-semibold text-gray-800 dark:text-white">{announcement.title}</h3>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <AudienceBadge audience={announcement.audience} />
-                  <span className="text-xs text-gray-400 dark:text-dark-text-secondary">{announcement.date}</span>
+        {loading && (
+          <div className="flex items-center justify-center py-12 text-gray-500 dark:text-dark-text-secondary">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Loading announcements…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            Failed to load announcements: {error}
+          </div>
+        )}
+        {!loading && !error && (
+          <div className="space-y-4">
+            {filtered.length === 0 && (
+              <p className="text-center py-8 text-gray-500 dark:text-dark-text-secondary">No announcements found.</p>
+            )}
+            {filtered.map(announcement => (
+              <div
+                key={announcement.id}
+                className="p-4 rounded-lg border border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <h3 className="font-semibold text-gray-800 dark:text-white">{announcement.title}</h3>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <AudienceBadge audience={announcement.audience} />
+                    <span className="text-xs text-gray-400 dark:text-dark-text-secondary">{announcement.date}</span>
+                  </div>
                 </div>
+                <p className="text-sm text-gray-600 dark:text-dark-text">{announcement.message}</p>
+                <p className="text-xs text-gray-400 dark:text-dark-text-secondary mt-2">— {announcement.author}</p>
               </div>
-              <p className="text-sm text-gray-600 dark:text-dark-text">{announcement.message}</p>
-              <p className="text-xs text-gray-400 dark:text-dark-text-secondary mt-2">— {announcement.author}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );
 };
 
 export default CommunicationPage;
+

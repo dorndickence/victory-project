@@ -1,41 +1,59 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { booksData, borrowRecordsData } from '../constants/data';
-import { Search, Filter, Library, BookOpen, BookMarked } from 'lucide-react';
+import { apiFetch } from '../lib/api';
+import type { Book, BorrowRecord } from '../types';
+import { Search, Filter, Library, BookOpen, BookMarked, Loader2 } from 'lucide-react';
 
 type Tab = 'books' | 'borrows';
 
 const LibraryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('books');
+  const [books, setBooks] = useState<Book[]>([]);
+  const [borrowRecords, setBorrowRecords] = useState<BorrowRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [borrowFilter, setBorrowFilter] = useState('All');
 
-  const totalBooks = booksData.reduce((s, b) => s + b.copies, 0);
-  const availableBooks = booksData.reduce((s, b) => s + b.available, 0);
-  const overdueCount = borrowRecordsData.filter(r => r.status === 'Overdue').length;
+  useEffect(() => {
+    Promise.all([
+      apiFetch<{ data: { books: Book[] } }>('/library/books'),
+      apiFetch<{ data: { borrowRecords: BorrowRecord[] } }>('/library/borrows'),
+    ])
+      .then(([booksRes, borrowsRes]) => {
+        setBooks(booksRes.data.books);
+        setBorrowRecords(borrowsRes.data.borrowRecords);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const categories = ['All', ...Array.from(new Set(booksData.map(b => b.category))).sort()];
+  const totalBooks = books.reduce((s, b) => s + b.copies, 0);
+  const availableBooks = books.reduce((s, b) => s + b.available, 0);
+  const overdueCount = borrowRecords.filter(r => r.status === 'Overdue').length;
+
+  const categories = ['All', ...Array.from(new Set(books.map(b => b.category))).sort()];
 
   const filteredBooks = useMemo(() =>
-    booksData
+    books
       .filter(b =>
         b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.author.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .filter(b => categoryFilter === 'All' || b.category === categoryFilter),
-    [searchTerm, categoryFilter]
+    [books, searchTerm, categoryFilter]
   );
 
   const filteredBorrows = useMemo(() =>
-    borrowRecordsData
+    borrowRecords
       .filter(r =>
         r.bookTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.studentName.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .filter(r => borrowFilter === 'All' || r.status === borrowFilter),
-    [searchTerm, borrowFilter]
+    [borrowRecords, searchTerm, borrowFilter]
   );
 
   const BorrowBadge: React.FC<{ status: 'Borrowed' | 'Returned' | 'Overdue' }> = ({ status }) => {
@@ -156,8 +174,20 @@ const LibraryPage: React.FC = () => {
           </div>
         </div>
 
+        {loading && (
+          <div className="flex items-center justify-center py-12 text-gray-500 dark:text-dark-text-secondary">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Loading library data…
+          </div>
+        )}
+        {error && (
+          <div className="text-center py-8 text-red-500">
+            Failed to load library data: {error}
+          </div>
+        )}
+
         {/* Books table */}
-        {activeTab === 'books' && (
+        {!loading && !error && activeTab === 'books' && (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
@@ -200,7 +230,7 @@ const LibraryPage: React.FC = () => {
         )}
 
         {/* Borrow records table */}
-        {activeTab === 'borrows' && (
+        {!loading && !error && activeTab === 'borrows' && (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-dark-border">
@@ -237,3 +267,4 @@ const LibraryPage: React.FC = () => {
 };
 
 export default LibraryPage;
+
