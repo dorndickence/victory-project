@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import Announcement from '../models/Announcement';
 import AppError from './errorController';
 import { validateObjectId } from '../utils/validateId';
+import prisma from '../lib/prisma';
 
 export const getAllAnnouncements = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const announcements = await Announcement.find().sort({ date: -1 });
+    const announcements = await prisma.announcement.findMany({ orderBy: { date: 'desc' } });
     res.status(200).json({
       status: 'success',
       results: announcements.length,
@@ -19,7 +19,7 @@ export const getAllAnnouncements = async (_req: Request, res: Response, next: Ne
 export const getAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const announcement = await Announcement.findById(req.params.id);
+    const announcement = await prisma.announcement.findUnique({ where: { id: req.params.id } });
     if (!announcement) {
       return next(new AppError('No announcement found with that ID', 404));
     }
@@ -35,7 +35,9 @@ export const getAnnouncement = async (req: Request, res: Response, next: NextFun
 export const createAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { title, message, audience, date, author } = req.body;
-    const newAnnouncement = await Announcement.create({ title, message, audience, date, author });
+    const newAnnouncement = await prisma.announcement.create({
+      data: { title, message, audience, date, author }
+    });
     res.status(201).json({
       status: 'success',
       data: { announcement: newAnnouncement }
@@ -56,13 +58,14 @@ export const updateAnnouncement = async (req: Request, res: Response, next: Next
     if (date !== undefined) allowedUpdates.date = date;
     if (author !== undefined) allowedUpdates.author = author;
 
-    const announcement = await Announcement.findByIdAndUpdate(req.params.id, allowedUpdates, {
-      new: true,
-      runValidators: true
-    });
-    if (!announcement) {
+    const existingAnnouncement = await prisma.announcement.findUnique({ where: { id: req.params.id } });
+    if (!existingAnnouncement) {
       return next(new AppError('No announcement found with that ID', 404));
     }
+    const announcement = await prisma.announcement.update({
+      where: { id: req.params.id },
+      data: allowedUpdates
+    });
     res.status(200).json({
       status: 'success',
       data: { announcement }
@@ -75,10 +78,11 @@ export const updateAnnouncement = async (req: Request, res: Response, next: Next
 export const deleteAnnouncement = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const announcement = await Announcement.findByIdAndDelete(req.params.id);
-    if (!announcement) {
+    const existingAnnouncement = await prisma.announcement.findUnique({ where: { id: req.params.id } });
+    if (!existingAnnouncement) {
       return next(new AppError('No announcement found with that ID', 404));
     }
+    await prisma.announcement.delete({ where: { id: req.params.id } });
     res.status(204).json({
       status: 'success',
       data: null

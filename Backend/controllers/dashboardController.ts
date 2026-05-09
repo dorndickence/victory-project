@@ -1,16 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import Student from '../models/Student';
-import Teacher from '../models/Teacher';
-import FeeRecord from '../models/FeeRecord';
-import AttendanceRecord from '../models/AttendanceRecord';
+import prisma from '../lib/prisma';
 
 export const getDashboardStats = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const [totalStudents, totalTeachers, feeRecords, attendanceRecords] = await Promise.all([
-      Student.countDocuments(),
-      Teacher.countDocuments(),
-      FeeRecord.find().sort({ month: 1 }),
-      AttendanceRecord.find().sort({ month: 1 })
+      prisma.student.count(),
+      prisma.teacher.count(),
+      prisma.feeRecord.findMany({ orderBy: { month: 'asc' } }),
+      prisma.attendanceRecord.findMany({ orderBy: { month: 'asc' } })
     ]);
 
     const totalRevenue = feeRecords.reduce((sum, r) => sum + r.collected, 0);

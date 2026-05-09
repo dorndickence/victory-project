@@ -1,13 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import Book from '../models/Book';
-import BorrowRecord from '../models/BorrowRecord';
 import AppError from './errorController';
 import { validateObjectId } from '../utils/validateId';
+import prisma from '../lib/prisma';
 
 // Books
 export const getAllBooks = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const books = await Book.find();
+    const books = await prisma.book.findMany();
     res.status(200).json({
       status: 'success',
       results: books.length,
@@ -21,7 +20,7 @@ export const getAllBooks = async (_req: Request, res: Response, next: NextFuncti
 export const getBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const book = await Book.findById(req.params.id);
+    const book = await prisma.book.findUnique({ where: { id: req.params.id } });
     if (!book) {
       return next(new AppError('No book found with that ID', 404));
     }
@@ -37,7 +36,9 @@ export const getBook = async (req: Request, res: Response, next: NextFunction) =
 export const createBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { title, author, category, copies, available } = req.body;
-    const newBook = await Book.create({ title, author, category, copies, available });
+    const newBook = await prisma.book.create({
+      data: { title, author, category, copies, available }
+    });
     res.status(201).json({
       status: 'success',
       data: { book: newBook }
@@ -58,13 +59,14 @@ export const updateBook = async (req: Request, res: Response, next: NextFunction
     if (copies !== undefined) allowedUpdates.copies = copies;
     if (available !== undefined) allowedUpdates.available = available;
 
-    const book = await Book.findByIdAndUpdate(req.params.id, allowedUpdates, {
-      new: true,
-      runValidators: true
-    });
-    if (!book) {
+    const existingBook = await prisma.book.findUnique({ where: { id: req.params.id } });
+    if (!existingBook) {
       return next(new AppError('No book found with that ID', 404));
     }
+    const book = await prisma.book.update({
+      where: { id: req.params.id },
+      data: allowedUpdates
+    });
     res.status(200).json({
       status: 'success',
       data: { book }
@@ -77,10 +79,11 @@ export const updateBook = async (req: Request, res: Response, next: NextFunction
 export const deleteBook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const book = await Book.findByIdAndDelete(req.params.id);
-    if (!book) {
+    const existingBook = await prisma.book.findUnique({ where: { id: req.params.id } });
+    if (!existingBook) {
       return next(new AppError('No book found with that ID', 404));
     }
+    await prisma.book.delete({ where: { id: req.params.id } });
     res.status(204).json({
       status: 'success',
       data: null
@@ -93,7 +96,7 @@ export const deleteBook = async (req: Request, res: Response, next: NextFunction
 // Borrow Records
 export const getAllBorrowRecords = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const borrowRecords = await BorrowRecord.find();
+    const borrowRecords = await prisma.borrowRecord.findMany();
     res.status(200).json({
       status: 'success',
       results: borrowRecords.length,
@@ -107,7 +110,7 @@ export const getAllBorrowRecords = async (_req: Request, res: Response, next: Ne
 export const getBorrowRecord = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const record = await BorrowRecord.findById(req.params.id);
+    const record = await prisma.borrowRecord.findUnique({ where: { id: req.params.id } });
     if (!record) {
       return next(new AppError('No borrow record found with that ID', 404));
     }
@@ -123,7 +126,9 @@ export const getBorrowRecord = async (req: Request, res: Response, next: NextFun
 export const createBorrowRecord = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { bookTitle, studentName, issueDate, dueDate, returnDate, status } = req.body;
-    const newRecord = await BorrowRecord.create({ bookTitle, studentName, issueDate, dueDate, returnDate, status });
+    const newRecord = await prisma.borrowRecord.create({
+      data: { bookTitle, studentName, issueDate, dueDate, returnDate, status }
+    });
     res.status(201).json({
       status: 'success',
       data: { borrowRecord: newRecord }
@@ -145,13 +150,14 @@ export const updateBorrowRecord = async (req: Request, res: Response, next: Next
     if (returnDate !== undefined) allowedUpdates.returnDate = returnDate;
     if (status !== undefined) allowedUpdates.status = status;
 
-    const record = await BorrowRecord.findByIdAndUpdate(req.params.id, allowedUpdates, {
-      new: true,
-      runValidators: true
-    });
-    if (!record) {
+    const existingRecord = await prisma.borrowRecord.findUnique({ where: { id: req.params.id } });
+    if (!existingRecord) {
       return next(new AppError('No borrow record found with that ID', 404));
     }
+    const record = await prisma.borrowRecord.update({
+      where: { id: req.params.id },
+      data: allowedUpdates
+    });
     res.status(200).json({
       status: 'success',
       data: { borrowRecord: record }
@@ -164,10 +170,11 @@ export const updateBorrowRecord = async (req: Request, res: Response, next: Next
 export const deleteBorrowRecord = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const record = await BorrowRecord.findByIdAndDelete(req.params.id);
-    if (!record) {
+    const existingRecord = await prisma.borrowRecord.findUnique({ where: { id: req.params.id } });
+    if (!existingRecord) {
       return next(new AppError('No borrow record found with that ID', 404));
     }
+    await prisma.borrowRecord.delete({ where: { id: req.params.id } });
     res.status(204).json({
       status: 'success',
       data: null

@@ -4,7 +4,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE "users" (
-    "id"       TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"       UUID NOT NULL DEFAULT gen_random_uuid(),
     "name"     TEXT NOT NULL,
     "email"    TEXT NOT NULL,
     "password" TEXT NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE "users" (
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 CREATE TABLE "students" (
-    "id"         TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"         UUID NOT NULL DEFAULT gen_random_uuid(),
     "name"       TEXT NOT NULL,
     "class"      TEXT NOT NULL,
     "rollNo"     INTEGER NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE "students" (
 );
 
 CREATE TABLE "teachers" (
-    "id"         TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"         UUID NOT NULL DEFAULT gen_random_uuid(),
     "name"       TEXT NOT NULL,
     "subject"    TEXT NOT NULL,
     "experience" INTEGER NOT NULL DEFAULT 0,
@@ -37,7 +37,7 @@ CREATE TABLE "teachers" (
 );
 
 CREATE TABLE "fee_records" (
-    "id"        TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"        UUID NOT NULL DEFAULT gen_random_uuid(),
     "month"     TEXT NOT NULL,
     "collected" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "pending"   DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -45,7 +45,7 @@ CREATE TABLE "fee_records" (
 );
 
 CREATE TABLE "attendance_records" (
-    "id"      TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"      UUID NOT NULL DEFAULT gen_random_uuid(),
     "month"   TEXT NOT NULL,
     "present" INTEGER NOT NULL DEFAULT 0,
     "absent"  INTEGER NOT NULL DEFAULT 0,
@@ -53,7 +53,7 @@ CREATE TABLE "attendance_records" (
 );
 
 CREATE TABLE "student_fees" (
-    "id"          TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"          UUID NOT NULL DEFAULT gen_random_uuid(),
     "studentId"   TEXT NOT NULL,
     "studentName" TEXT NOT NULL,
     "class"       TEXT NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE "student_fees" (
 );
 
 CREATE TABLE "subjects" (
-    "id"           TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"           UUID NOT NULL DEFAULT gen_random_uuid(),
     "name"         TEXT NOT NULL,
     "class"        TEXT NOT NULL,
     "teacherName"  TEXT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE "subjects" (
 );
 
 CREATE TABLE "exams" (
-    "id"       TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"       UUID NOT NULL DEFAULT gen_random_uuid(),
     "subject"  TEXT NOT NULL,
     "class"    TEXT NOT NULL,
     "date"     TEXT NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE "exams" (
 );
 
 CREATE TABLE "books" (
-    "id"        TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"        UUID NOT NULL DEFAULT gen_random_uuid(),
     "title"     TEXT NOT NULL,
     "author"    TEXT NOT NULL,
     "category"  TEXT NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE "books" (
 );
 
 CREATE TABLE "borrow_records" (
-    "id"          TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"          UUID NOT NULL DEFAULT gen_random_uuid(),
     "bookTitle"   TEXT NOT NULL,
     "studentName" TEXT NOT NULL,
     "issueDate"   TEXT NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE "borrow_records" (
 );
 
 CREATE TABLE "announcements" (
-    "id"       TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+    "id"       UUID NOT NULL DEFAULT gen_random_uuid(),
     "title"    TEXT NOT NULL,
     "message"  TEXT NOT NULL,
     "audience" TEXT NOT NULL DEFAULT 'All',

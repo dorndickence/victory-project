@@ -11,7 +11,7 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(uuid())
+  id       String @id @default(uuid()) @db.Uuid
   name     String
   email    String @unique
   password String
@@ -21,7 +21,7 @@ model User {
 }
 
 model Student {
-  id         String @id @default(uuid())
+  id         String @id @default(uuid()) @db.Uuid
   name       String
   className  String @map("class")
   rollNo     Int
@@ -34,7 +34,7 @@ model Student {
 }
 
 model Teacher {
-  id         String @id @default(uuid())
+  id         String @id @default(uuid()) @db.Uuid
   name       String
   subject    String
   experience Int    @default(0)
@@ -45,7 +45,7 @@ model Teacher {
 }
 
 model FeeRecord {
-  id        String @id @default(uuid())
+  id        String @id @default(uuid()) @db.Uuid
   month     String
   collected Float  @default(0)
   pending   Float  @default(0)
@@ -54,7 +54,7 @@ model FeeRecord {
 }
 
 model AttendanceRecord {
-  id      String @id @default(uuid())
+  id      String @id @default(uuid()) @db.Uuid
   month   String
   present Int    @default(0)
   absent  Int    @default(0)
@@ -63,7 +63,7 @@ model AttendanceRecord {
 }
 
 model StudentFee {
-  id          String @id @default(uuid())
+  id          String @id @default(uuid()) @db.Uuid
   studentId   String
   studentName String
   className   String @map("class")
@@ -78,7 +78,7 @@ model StudentFee {
 }
 
 model Subject {
-  id           String @id @default(uuid())
+  id           String @id @default(uuid()) @db.Uuid
   name         String
   className    String @map("class")
   teacherName  String
@@ -88,7 +88,7 @@ model Subject {
 }
 
 model Exam {
-  id       String @id @default(uuid())
+  id       String @id @default(uuid()) @db.Uuid
   subject  String
   className String @map("class")
   date     String
@@ -100,7 +100,7 @@ model Exam {
 }
 
 model Book {
-  id        String @id @default(uuid())
+  id        String @id @default(uuid()) @db.Uuid
   title     String
   author    String
   category  String
@@ -111,7 +111,7 @@ model Book {
 }
 
 model BorrowRecord {
-  id          String  @id @default(uuid())
+  id          String  @id @default(uuid()) @db.Uuid
   bookTitle   String
   studentName String
   issueDate   String
@@ -123,7 +123,7 @@ model BorrowRecord {
 }
 
 model Announcement {
-  id       String @id @default(uuid())
+  id       String @id @default(uuid()) @db.Uuid
   title    String
   message  String
   audience String @default("All") // All, Students, Teachers, Parents

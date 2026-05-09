@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
 import AppError from '../controllers/errorController';
 import { JWT_SECRET } from '../config/config';
+import prisma from '../lib/prisma';
 
 interface JwtPayload {
   id: string;
@@ -25,7 +25,7 @@ export const protect = async (req: Request & { user?: any }, _res: Response, nex
 
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
-    const currentUser = await User.findById(decoded.id);
+    const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
     if (!currentUser) {
       return next(new AppError('The user belonging to this token no longer exists.', 401));
     }
