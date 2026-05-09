@@ -1,6 +1,6 @@
 # Victory School Management System
 
-A full-stack school management web application built with **React + TypeScript** (frontend) and **Node.js / Express + MongoDB** (backend).
+A full-stack school management web application built with **React + TypeScript** (frontend) and **Node.js / Express + PostgreSQL (Neon) + Prisma** (backend).
 
 All data displayed in the UI is served from the real backend API — there is no hardcoded demo data in production screens.
 
@@ -24,7 +24,7 @@ All data displayed in the UI is served from the real backend API — there is no
 | Layer    | Technology |
 |----------|------------|
 | Frontend | React 19, TypeScript, Vite, React Router, Recharts, Lucide React |
-| Backend  | Node.js, Express, TypeScript, Mongoose (MongoDB), JWT |
+| Backend  | Node.js, Express, TypeScript, Prisma (PostgreSQL/Neon), JWT |
 | AI       | Google Gemini (via `@google/genai`) |
 | CI       | GitHub Actions |
 
@@ -35,7 +35,7 @@ All data displayed in the UI is served from the real backend API — there is no
 ### Prerequisites
 
 - Node.js ≥ 18
-- MongoDB (local or [MongoDB Atlas](https://www.mongodb.com/atlas))
+- PostgreSQL database (local) or a hosted Neon database
 - A [Google Gemini API key](https://aistudio.google.com/app/apikey) (optional – AI assistant only)
 
 ### 1. Clone the repository
@@ -64,17 +64,24 @@ npm run dev        # Vite dev server → http://localhost:5173
 ```bash
 cd Backend
 cp .env.example .env
-# Edit Backend/.env – set MONGO_URI and JWT_SECRET at minimum
+# Edit Backend/.env – set DATABASE_URL and JWT_SECRET at minimum
 ```
 
-### 5. Start the backend
+### 5. Run Prisma migrations (first time only)
+
+```bash
+# Still inside Backend/
+npx prisma migrate dev --name init
+```
+
+### 6. Start the backend
 
 ```bash
 npm install
 npm run dev        # ts-node-dev → http://localhost:5000
 ```
 
-### 6. (Optional) Seed the database
+### 7. (Optional) Seed the database
 
 ```bash
 # Still inside Backend/
@@ -100,7 +107,7 @@ This seeds students, teachers, monthly fee records, attendance records, per-stud
 |----------|----------|-------------|
 | `NODE_ENV` | No | `development` or `production` (default: `development`) |
 | `PORT` | No | Server port (default: `5000`) |
-| `MONGO_URI` | Yes | MongoDB connection string |
+| `DATABASE_URL` | Yes | PostgreSQL connection string (Neon or local) |
 | `JWT_SECRET` | **Yes in prod** | Secret for signing JWTs |
 | `CORS_ORIGIN` | No | Allowed frontend origin (default: `http://localhost:5173`) |
 | `SEED_ADMIN_EMAIL` | Seed only | Admin email created by seed script |
@@ -180,8 +187,36 @@ npm start              # node dist/app.js
 2. Build both frontend and backend (`npm run build`).
 3. Serve the frontend `dist/` folder via a static host (Netlify, Vercel, S3, Nginx, etc.).
 4. Deploy the backend `dist/app.js` on any Node.js host (Render, Railway, Fly.io, AWS, a VPS, etc.).
-5. Point `CORS_ORIGIN` on the backend to your frontend domain.
-6. Point `VITE_API_URL` on the frontend to your backend domain.
+5. Ensure the backend can reach your **PostgreSQL/Neon** database (set `DATABASE_URL`).
+6. Run Prisma migrations in production (recommended command: `npx prisma migrate deploy`).
+7. Point `CORS_ORIGIN` on the backend to your frontend domain.
+8. Point `VITE_API_URL` on the frontend to your backend domain.
+
+### Railway + Neon (recommended)
+
+1. **Create a Neon database** and copy its connection string.
+2. In Railway, create a new service from this repo and set **Root Directory** to `Backend/`.
+3. Set Railway **Environment Variables**:
+   - `NODE_ENV=production`
+   - `DATABASE_URL=<your neon connection string>`
+   - `JWT_SECRET=<long random string>`
+   - `CORS_ORIGIN=<your frontend domain>`
+4. Set **Build Command**:
+   ```bash
+   npm ci && npm run build
+   ```
+5. Set **Start Command**:
+   ```bash
+   npm start
+   ```
+6. Set a **Release/Deploy Command** (if supported):
+   ```bash
+   npx prisma migrate deploy
+   ```
+   If Railway doesn’t support a release command, run migrations as part of your start command once:
+   ```bash
+   npx prisma migrate deploy && npm start
+   ```
 
 ### Docker (example)
 
@@ -229,11 +264,8 @@ victory-project/
     ├── controllers/      # Route handlers (student, teacher, fee, academics,
     │                     #   library, communication, dashboard, error)
     ├── middleware/        # Auth (JWT protect / restrictTo)
-    ├── models/           # Mongoose schemas (Student, Teacher, FeeRecord,
-    │                     #   AttendanceRecord, StudentFee, Subject, Exam,
-    │                     #   Book, BorrowRecord, Announcement, User)
+    ├── prisma/           # Prisma schema & migrations
     ├── routes/           # Express routers for all resources
     ├── tests/            # Unit tests (errorController, teacherController)
     └── utils/seed.ts     # Dev-only database seed script (all entities)
 ```
-

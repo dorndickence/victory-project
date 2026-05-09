@@ -5,34 +5,35 @@
 import { Request, Response, NextFunction } from 'express';
 import AppError from '../controllers/errorController';
 
-// ── Mock the Teacher model ───────────────────────────────────────────────────
-// Use valid 24-hex-char MongoDB ObjectId strings so validateObjectId passes.
-const ID1 = '507f1f77bcf86cd799439011';
-const ID2 = '507f1f77bcf86cd799439012';
-const MISSING_ID = '507f1f77bcf86cd799439099';
+// ── Mock Prisma ──────────────────────────────────────────────────────────────
+// Use valid UUIDs so validateObjectId passes.
+const ID1 = '11111111-1111-4111-8111-111111111111';
+const ID2 = '22222222-2222-4222-8222-222222222222';
+const MISSING_ID = '33333333-3333-4333-8333-333333333333';
+const NEW_ID = '44444444-4444-4444-8444-444444444444';
 
 const mockTeachers = [
-  { _id: ID1, id: 'T01', name: 'Mr. Smith', subject: 'Mathematics', experience: 10, status: 'Active' },
-  { _id: ID2, id: 'T02', name: 'Ms. Jones', subject: 'Science', experience: 8, status: 'Active' },
+  { id: ID1, name: 'Mr. Smith', subject: 'Mathematics', experience: 10, status: 'Active' },
+  { id: ID2, name: 'Ms. Jones', subject: 'Science', experience: 8, status: 'Active' },
 ];
 
-jest.mock('../models/Teacher', () => ({
+jest.mock('../lib/prisma', () => ({
   __esModule: true,
   default: {
-    find: jest.fn().mockResolvedValue(mockTeachers),
-    findById: jest.fn().mockImplementation((id: string) =>
-      Promise.resolve(mockTeachers.find(t => t._id === id) ?? null)
-    ),
-    findByIdAndUpdate: jest.fn().mockImplementation((id: string, updates: object) => {
-      const teacher = mockTeachers.find(t => t._id === id);
-      return Promise.resolve(teacher ? { ...teacher, ...updates } : null);
-    }),
-    findByIdAndDelete: jest.fn().mockImplementation((id: string) =>
-      Promise.resolve(mockTeachers.find(t => t._id === id) ?? null)
-    ),
-    create: jest.fn().mockImplementation((data: object) =>
-      Promise.resolve({ _id: '507f1f77bcf86cd799439013', ...data })
-    ),
+    teacher: {
+      findMany: jest.fn().mockResolvedValue(mockTeachers),
+      findUnique: jest.fn().mockImplementation(({ where }: { where: { id: string } }) =>
+        Promise.resolve(mockTeachers.find(t => t.id === where.id) ?? null)
+      ),
+      create: jest.fn().mockImplementation(({ data }: { data: object }) =>
+        Promise.resolve({ id: NEW_ID, ...data })
+      ),
+      update: jest.fn().mockImplementation(({ where, data }: { where: { id: string }; data: object }) => {
+        const teacher = mockTeachers.find(t => t.id === where.id);
+        return Promise.resolve(teacher ? { ...teacher, ...data } : null);
+      }),
+      delete: jest.fn().mockResolvedValue({}),
+    },
   },
 }));
 

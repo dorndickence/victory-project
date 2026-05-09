@@ -1,14 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import Student from '../models/Student';
 import AppError from './errorController';
+import prisma from '../lib/prisma';
+
+const mapStudent = (student: { className: string } & Record<string, unknown>) => {
+  const { className, ...rest } = student;
+  return { ...rest, class: className };
+};
 
 export const getAllStudents = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const students = await Student.find();
+    const students = await prisma.student.findMany();
     res.status(200).json({
       status: 'success',
       results: students.length,
-      data: { students }
+      data: { students: students.map(mapStudent) }
     });
   } catch (err) {
     next(err);
@@ -17,13 +22,13 @@ export const getAllStudents = async (_req: Request, res: Response, next: NextFun
 
 export const getStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await prisma.student.findUnique({ where: { id: req.params.id } });
     if (!student) {
       return next(new AppError('No student found with that ID', 404));
     }
     res.status(200).json({
       status: 'success',
-      data: { student }
+      data: { student: mapStudent(student) }
     });
   } catch (err) {
     next(err);
@@ -32,10 +37,21 @@ export const getStudent = async (req: Request, res: Response, next: NextFunction
 
 export const createStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const newStudent = await Student.create(req.body);
+    const { name, class: studentClass, rollNo, feesDue, attendance, avatar, status } = req.body;
+    const newStudent = await prisma.student.create({
+      data: {
+        name,
+        className: studentClass,
+        rollNo,
+        feesDue,
+        attendance,
+        avatar,
+        status
+      }
+    });
     res.status(201).json({
       status: 'success',
-      data: { student: newStudent }
+      data: { student: mapStudent(newStudent) }
     });
   } catch (err) {
     next(err);
@@ -48,23 +64,24 @@ export const updateStudent = async (req: Request, res: Response, next: NextFunct
     const { name, class: studentClass, rollNo, feesDue, attendance, avatar, status } = req.body;
     const allowedUpdates: Record<string, unknown> = {};
     if (name !== undefined) allowedUpdates.name = name;
-    if (studentClass !== undefined) allowedUpdates.class = studentClass;
+    if (studentClass !== undefined) allowedUpdates.className = studentClass;
     if (rollNo !== undefined) allowedUpdates.rollNo = rollNo;
     if (feesDue !== undefined) allowedUpdates.feesDue = feesDue;
     if (attendance !== undefined) allowedUpdates.attendance = attendance;
     if (avatar !== undefined) allowedUpdates.avatar = avatar;
     if (status !== undefined) allowedUpdates.status = status;
 
-    const student = await Student.findByIdAndUpdate(req.params.id, allowedUpdates, {
-      new: true,
-      runValidators: true
-    });
-    if (!student) {
+    const existingStudent = await prisma.student.findUnique({ where: { id: req.params.id } });
+    if (!existingStudent) {
       return next(new AppError('No student found with that ID', 404));
     }
+    const student = await prisma.student.update({
+      where: { id: req.params.id },
+      data: allowedUpdates
+    });
     res.status(200).json({
       status: 'success',
-      data: { student }
+      data: { student: mapStudent(student) }
     });
   } catch (err) {
     next(err);
@@ -73,10 +90,11 @@ export const updateStudent = async (req: Request, res: Response, next: NextFunct
 
 export const deleteStudent = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const student = await Student.findByIdAndDelete(req.params.id);
-    if (!student) {
+    const existingStudent = await prisma.student.findUnique({ where: { id: req.params.id } });
+    if (!existingStudent) {
       return next(new AppError('No student found with that ID', 404));
     }
+    await prisma.student.delete({ where: { id: req.params.id } });
     res.status(204).json({
       status: 'success',
       data: null

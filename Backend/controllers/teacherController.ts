@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import Teacher from '../models/Teacher';
 import AppError from './errorController';
 import { validateObjectId } from '../utils/validateId';
+import prisma from '../lib/prisma';
 
 export const getAllTeachers = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const teachers = await Teacher.find();
+    const teachers = await prisma.teacher.findMany();
     res.status(200).json({
       status: 'success',
       results: teachers.length,
@@ -19,7 +19,7 @@ export const getAllTeachers = async (_req: Request, res: Response, next: NextFun
 export const getTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const teacher = await Teacher.findById(req.params.id);
+    const teacher = await prisma.teacher.findUnique({ where: { id: req.params.id } });
     if (!teacher) {
       return next(new AppError('No teacher found with that ID', 404));
     }
@@ -34,8 +34,10 @@ export const getTeacher = async (req: Request, res: Response, next: NextFunction
 
 export const createTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, name, subject, experience, avatar, status } = req.body;
-    const newTeacher = await Teacher.create({ id, name, subject, experience, avatar, status });
+    const { name, subject, experience, avatar, status } = req.body;
+    const newTeacher = await prisma.teacher.create({
+      data: { name, subject, experience, avatar, status }
+    });
     res.status(201).json({
       status: 'success',
       data: { teacher: newTeacher }
@@ -56,13 +58,14 @@ export const updateTeacher = async (req: Request, res: Response, next: NextFunct
     if (avatar !== undefined) allowedUpdates.avatar = avatar;
     if (status !== undefined) allowedUpdates.status = status;
 
-    const teacher = await Teacher.findByIdAndUpdate(req.params.id, allowedUpdates, {
-      new: true,
-      runValidators: true
-    });
-    if (!teacher) {
+    const existingTeacher = await prisma.teacher.findUnique({ where: { id: req.params.id } });
+    if (!existingTeacher) {
       return next(new AppError('No teacher found with that ID', 404));
     }
+    const teacher = await prisma.teacher.update({
+      where: { id: req.params.id },
+      data: allowedUpdates
+    });
     res.status(200).json({
       status: 'success',
       data: { teacher }
@@ -75,10 +78,11 @@ export const updateTeacher = async (req: Request, res: Response, next: NextFunct
 export const deleteTeacher = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!validateObjectId(req.params.id, next)) return;
-    const teacher = await Teacher.findByIdAndDelete(req.params.id);
-    if (!teacher) {
+    const existingTeacher = await prisma.teacher.findUnique({ where: { id: req.params.id } });
+    if (!existingTeacher) {
       return next(new AppError('No teacher found with that ID', 404));
     }
+    await prisma.teacher.delete({ where: { id: req.params.id } });
     res.status(204).json({
       status: 'success',
       data: null
