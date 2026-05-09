@@ -10,6 +10,7 @@ if (!SEED_ADMIN_PASSWORD) {
 }
 
 const seedDatabase = async () => {
+  let hadError = false;
   try {
     await prisma.$transaction([
       prisma.student.deleteMany(),
@@ -145,9 +146,12 @@ const seedDatabase = async () => {
     console.log('Database seeded successfully!');
   } catch (err) {
     console.error('Error seeding database:', err);
-    process.exitCode = 1;
+    hadError = true;
   } finally {
     await prisma.$disconnect();
+    if (hadError) {
+      process.exit(1);
+    }
   }
 };
 
