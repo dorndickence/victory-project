@@ -26,15 +26,16 @@ const seedDatabase = async () => {
     ]);
 
     // Seed students
-    await prisma.student.createMany({
-      data: [
-        { name: 'Alice Johnson', className: '10A', rollNo: 1, feesDue: 0, attendance: 95, avatar: '', status: 'Active' },
-        { name: 'Bob Williams', className: '10B', rollNo: 2, feesDue: 50, attendance: 88, avatar: '', status: 'Active' },
-        { name: 'Charlie Brown', className: '9A', rollNo: 3, feesDue: 0, attendance: 92, avatar: '', status: 'Active' },
-        { name: 'Diana Miller', className: '11A', rollNo: 4, feesDue: 150, attendance: 75, avatar: '', status: 'Inactive' },
-        { name: 'Ethan Davis', className: '12B', rollNo: 5, feesDue: 0, attendance: 98, avatar: '', status: 'Active' }
-      ]
-    });
+    const studentSeeds = [
+      { name: 'Alice Johnson', className: '10A', rollNo: 1, feesDue: 0, attendance: 95, avatar: '', status: 'Active' },
+      { name: 'Bob Williams', className: '10B', rollNo: 2, feesDue: 50, attendance: 88, avatar: '', status: 'Active' },
+      { name: 'Charlie Brown', className: '9A', rollNo: 3, feesDue: 0, attendance: 92, avatar: '', status: 'Active' },
+      { name: 'Diana Miller', className: '11A', rollNo: 4, feesDue: 150, attendance: 75, avatar: '', status: 'Inactive' },
+      { name: 'Ethan Davis', className: '12B', rollNo: 5, feesDue: 0, attendance: 98, avatar: '', status: 'Active' }
+    ];
+    const students = await Promise.all(
+      studentSeeds.map((data) => prisma.student.create({ data }))
+    );
 
     // Seed teachers
     await prisma.teacher.createMany({
@@ -73,11 +74,11 @@ const seedDatabase = async () => {
     // Seed per-student fee records
     await prisma.studentFee.createMany({
       data: [
-        { studentId: 'S001', studentName: 'Alice Johnson', className: '10A', month: 'Apr 2026', amount: 5000, paid: 5000, due: 0, status: 'Paid', dueDate: '2026-04-05' },
-        { studentId: 'S002', studentName: 'Bob Williams', className: '10B', month: 'Apr 2026', amount: 5000, paid: 4950, due: 50, status: 'Partial', dueDate: '2026-04-05' },
-        { studentId: 'S003', studentName: 'Charlie Brown', className: '9A', month: 'Apr 2026', amount: 4500, paid: 4500, due: 0, status: 'Paid', dueDate: '2026-04-05' },
-        { studentId: 'S004', studentName: 'Diana Miller', className: '11A', month: 'Apr 2026', amount: 5500, paid: 0, due: 5500, status: 'Unpaid', dueDate: '2026-04-05' },
-        { studentId: 'S005', studentName: 'Ethan Davis', className: '12B', month: 'Apr 2026', amount: 6000, paid: 6000, due: 0, status: 'Paid', dueDate: '2026-04-05' }
+        { studentId: students[0].id, studentName: students[0].name, className: '10A', month: 'Apr 2026', amount: 5000, paid: 5000, due: 0, status: 'Paid', dueDate: '2026-04-05' },
+        { studentId: students[1].id, studentName: students[1].name, className: '10B', month: 'Apr 2026', amount: 5000, paid: 4950, due: 50, status: 'Partial', dueDate: '2026-04-05' },
+        { studentId: students[2].id, studentName: students[2].name, className: '9A', month: 'Apr 2026', amount: 4500, paid: 4500, due: 0, status: 'Paid', dueDate: '2026-04-05' },
+        { studentId: students[3].id, studentName: students[3].name, className: '11A', month: 'Apr 2026', amount: 5500, paid: 0, due: 5500, status: 'Unpaid', dueDate: '2026-04-05' },
+        { studentId: students[4].id, studentName: students[4].name, className: '12B', month: 'Apr 2026', amount: 6000, paid: 6000, due: 0, status: 'Paid', dueDate: '2026-04-05' }
       ]
     });
 
